@@ -146,7 +146,7 @@ class H(object):
         E = 0
         E += 1/2*self.getNucleus().getMass()*self.getNucleus().getVel().magnitude()**2
         E += 1/2*self.getElectron().getMass()*self.getElectron().getVel().magnitude()**2
-        E -= K*self.getNucleus().getCharge()*self.getElectron().getCharge()/(self.getElectron().getPos()-self.getNucleus().getPos()).magnitude()
+        E += K*self.getNucleus().getCharge()*self.getElectron().getCharge()/(self.getElectron().getPos()-self.getNucleus().getPos()).magnitude()
         return E
 
 def randomUnitVector():
@@ -155,34 +155,31 @@ def randomUnitVector():
     return Vector((1-z**2)**(1/2)*math.cos(theta), (1-z**2)**(1/2)*math.sin(theta), z)
         
 def display():
-    point1 = Point(particles[0].pos.getX()*10**12*4+300, particles[0].pos.getY()*10**12*4+300)
-    point2 = Point(particles[1].pos.getX()*10**12*4+300, particles[1].pos.getY()*10**12*4+300)
-    circle1 = Circle(point1, 50/(-particles[0].pos.getZ()*10**11+10))
-    circle2 = Circle(point2, 50/(-particles[1].pos.getZ()*10**11+10))
-    circle1.setFill(color_rgb(255,255,255))
-    circle2.setFill(color_rgb(255,255,255))
-    circle1.draw(canvas)
-    circle2.draw(canvas)
+    for particle in particles:
+        circle = Circle(Point(particle.getPos().getX()*10**12*4+300, particle.getPos().getY()*10**12*4+300), 50/(-particle.getPos().getZ()*10**11+10))
+        circle.setFill(color_rgb(255,255,255))
+        circle.draw(canvas)
     
 def step():
     for particle in particles:
         particle.calcAcc()
     for particle in particles:
         particle.update()
-    #display()
+    display()
 
 particles = []
 elapsed = 0
 dt = 10**(-19)
-helium = H(Vector(0,0,0), Vector(400000,0,0))
-initialE = helium.getEnergy()
+helium1 = H(Vector(0,0,0), Vector(400000,0,0))
+helium2 = H(Vector(3*R,0,0), Vector(-400000,0,0))
+initialE = helium1.getEnergy()
 
-#canvas = GraphWin("My Window", 1200, 600)
-#canvas.setBackground(color_rgb(0,0,0))
+canvas = GraphWin("My Window", 1200, 600)
+canvas.setBackground(color_rgb(0,0,0))
 for i in range(10000):
     step()
     elapsed+=dt
     print(i, "/10000")
-print("Rate of energy loss:", (helium.getEnergy()-initialE)/elapsed, "J/s")
-#canvas.getMouse()   
+print("Rate of energy loss:", (helium1.getEnergy()-initialE)/elapsed, "J/s")
+canvas.getMouse()   
 
