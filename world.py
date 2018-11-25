@@ -9,19 +9,54 @@ class world(object):
         self.dt = dt
         self.timeElapsed = 0
         self.particles = []
+        self.usingVerletIntegration = False
     
-    def basicStep(self):
+    def eulerStep(self):
+        """
+        Stats were obtained from an array ofa 1000 simulations
+        Mean of relative change in internal energy: 4.1288
+        Median of relative change in internal energy: 0.0829
+        Mean simulation time 7.2999s
+        """
         self.setAccelerations()
         for particle in self.particles:
             particle.setPos(particle.getPos() + particle.getVel()*self.dt + 1/2*particle.getAcc()*self.dt**2 )
             particle.setVel(particle.getVel() + particle.getAcc()*self.dt)
         self.timeElapsed += self.dt
-        
+                
     def leapfrogStep(self):
+        """
+        Also called Velocity Verlet Algorithm
+        Stats were obtained from an array ofa 1000 simulations
+        Mean of relative change in internal energy: 0.9955
+        Median of relative change in internal energy: 0.0258
+        Mean simulation time 13.2813s
+        """
         self.setAccelerations()
+        newPos = []
+        accAtNewPos = []
         for particle in self.particles:
-            particle.setPos(particle.getPos() + particle.getVel()*self.dt + 1/2*particle.getAcc()*self.dt**2 )
-            particle.setVel(particle.getVel() + 1/2*(particle.getAcc()+self.calculateAccelerationAtPos(particle, particle.getPos()))*self.dt)
+            newPos.append(particle.getPos() + particle.getVel()*self.dt + 1/2*particle.getAcc()*self.dt**2 )
+            accAtNewPos.append(self.calculateAccelerationAtPos(particle, newPos[-1]))
+        for index, particle in enumerate(self.particles):
+            particle.setPos(newPos[index])
+            particle.setVel(particle.getVel() + 1/2*(particle.getAcc()+accAtNewPos[index])*self.dt)
+        self.timeElapsed += self.dt
+        
+    def verletStep(self):
+        """
+        Stats were obtained from an array ofa 1000 simulations
+        Mean of relative change in internal energy: 1.6383
+        Median of relative change in internal energy: 7.7263e-06
+        Mean simulation time 7.777s
+        """
+        self.usingVerletIntegration = True
+        if self.timeElapsed == 0:
+            self.eulerStep()
+        else:
+            self.setAccelerations()
+            for particle in self.particles:
+                particle.setPos(2*particle.getPos() - particle.getPrevPos() + particle.getAcc()*self.dt**2)
         self.timeElapsed += self.dt
     
     def setAccelerations(self):
@@ -37,6 +72,9 @@ class world(object):
         return netForce / particle.getMass()
     
     def internalEnergy(self):
+        if self.usingVerletIntegration:
+            for particle in self.particles:
+                particle.setVel((2*particle.getPos() - 2*particle.getPrevPos() + particle.getAcc()*self.dt**2)/(2*self.dt))
         potE = 0
         for particle in self.particles:
             for other in self.particles:
